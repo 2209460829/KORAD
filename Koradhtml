@@ -1,0 +1,1773 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>可编程电源控制系统</title>
+    <meta http-equiv="Permissions-Policy" content="serial=(self)" />
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a2980, #26d0ce);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        .container {
+            width: 100%;
+            min-width: 900px;
+            margin: 0 auto;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(to right, #2c3e50, #34495e);
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            border-bottom: 3px solid #3498db;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+            color: #ecf0f1;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 15px;
+            padding: 20px;
+            width: 100%;
+        }
+
+        @media (max-width: 1024px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .control-panel,
+        .display-panel {
+            background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border: 1px solid #dee2e6;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .panel-title {
+            font-size: 18px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #e74c3c;
+            box-shadow: 0 0 8px currentColor;
+        }
+
+        .status-connected {
+            background-color: #2ecc71;
+            box-shadow: 0 0 8px #2ecc71;
+        }
+
+        .parameter-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .parameter-box {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid #ddd;
+            transition: transform 0.3s ease;
+        }
+
+        .parameter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .parameter-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .parameter-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #3498db;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .slider-container {
+            margin: 10px 0;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            -webkit-appearance: none;
+            background: linear-gradient(to right, #3498db, #2c3e50);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #2c3e50;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 8px 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            text-align: center;
+            transition: border-color 0.3s;
+        }
+
+        .input-group button {
+            padding: 8px 15px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .quick-commands {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 8px;
+            margin: 15px 0;
+        }
+
+        .cmd-btn {
+            padding: 8px;
+            background: linear-gradient(145deg, #2c3e50, #34495e);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .serial-controls {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .serial-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .serial-config {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .config-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .config-group label {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 12px;
+        }
+
+        .config-group select {
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 12px;
+            background: white;
+            transition: border-color 0.3s;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .action-btn {
+            padding: 8px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .display-area {
+            background: #1a1a1a;
+            color: #00ff00;
+            height: 150px;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            border: 2px solid #2c3e50;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .display-line {
+            margin-bottom: 3px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .display-controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .display-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            color: #2c3e50;
+        }
+
+        .display-checkbox input {
+            width: 14px;
+            height: 14px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-top: 2px solid #dee2e6;
+            color: #6c757d;
+            font-size: 12px;
+        }
+
+        .specs-panel {
+            background: linear-gradient(145deg, #e3f2fd, #bbdefb);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            border-left: 5px solid #2196f3;
+        }
+
+        .specs-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1976d2;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .specs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .spec-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 8px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .timestamp {
+            color: #95a5a6;
+            font-size: 10px;
+            margin-right: 8px;
+        }
+
+        .program-panel {
+            background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border: 1px solid #dee2e6;
+            margin-top: 20px;
+        }
+
+        .program-steps {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .step-item {
+            display: grid;
+            grid-template-columns: 40px 1fr 1fr 80px;
+            gap: 8px;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            align-items: center;
+        }
+
+        .step-item:nth-child(even) {
+            background: #f5f5f5;
+        }
+
+        .step-num {
+            font-weight: 600;
+            font-size: 12px;
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        .step-voltage,
+        .step-time {
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .program-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .program-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .btn-start {
+            background: linear-gradient(145deg, #27ae60, #2ecc71);
+            color: white;
+        }
+
+        .btn-stop {
+            background: linear-gradient(145deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .btn-reset {
+            background: linear-gradient(145deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .program-status {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+    </style>
+    <!-- 异步加载Chart.js，不阻塞首屏渲染 -->
+    <script>
+        (function () {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+            script.async = true;
+            script.onload = function () {
+                window.chartLoaded = true;
+                if (typeof initVoltageWaveChart === 'function') {
+                    initVoltageWaveChart();
+                }
+            };
+            document.head.appendChild(script);
+        })();
+    </script>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🔌 可编程电源控制系统</h1>
+            <p class="subtitle">基于串口通信的精密电源参数控制与监控平台</p>
+        </header>
+
+        <div class="content">
+            <div class="control-panel">
+                <div class="panel-header">
+                    <div class="panel-title">⚡ 电源参数控制</div>
+                    <div class="status-indicator">
+                        <div class="status-dot" id="statusDot"></div>
+                        <span id="statusText">断开连接</span>
+                    </div>
+                </div>
+
+                <div class="parameter-controls">
+                    <div class="parameter-box">
+                        <div class="parameter-header">
+                            <div class="parameter-title">电压设定 (VSET1)</div>
+                            <div class="parameter-value" id="voltageValue">13.50V</div>
+                        </div>
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>0V</span>
+                                <span id="voltageLimit">最大: 25.0V</span>
+                            </div>
+                            <input type="range" id="voltageSlider" min="0" max="25" step="0.01" value="13.5">
+
+                        </div>
+                        <div class="input-group">
+                            <input type="number" id="voltageInput" min="0" max="25" step="0.01" value="13.50"
+                                oninput="this.value=this.value.replace(/[^0-9.]/g,'')">
+                            <button id="setVoltageBtn">设定电压</button>
+                        </div>
+                    </div>
+
+                    <div class="parameter-box">
+                        <div class="parameter-header">
+                            <div class="parameter-title">电流设定 (ISET1)</div>
+                            <div class="parameter-value" id="currentValue">10.00A</div>
+                        </div>
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>0A</span>
+                                <span id="currentLimit">最大: 10.0A</span>
+                            </div>
+                            <input type="range" id="currentSlider" min="0" max="10" step="0.01" value="10.00">
+                        </div>
+                        <div class="input-group">
+                            <input type="number" id="currentInput" min="0" max="10" step="0.01" value="10.00"
+                                oninput="this.value=this.value.replace(/[^0-9.]/g,'')">
+                            <button id="setCurrentBtn">设定电流</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="quick-commands">
+                    <button class="cmd-btn power-on" id="outputOnBtn">开启输出 (OUT1)</button>
+                    <button class="cmd-btn power-off" id="outputOffBtn">关闭输出 (OUT0)</button>
+                    <button class="cmd-btn query" id="queryVoltageBtn">查询电压 (VSET1?)</button>
+                    <button class="cmd-btn query" id="queryOutputVoltageBtn">查询实际电压 (VOUT1?)</button>
+                    <button class="cmd-btn query" id="queryCurrentBtn">查询电流 (IOUT1?)</button>
+                    <button class="cmd-btn" id="readAllBtn">读取所有参数</button>
+                </div>
+
+                <div class="serial-controls">
+                    <div class="serial-header">
+                        <div class="panel-title">🔧 串口配置</div>
+                        <div id="serialStatus">串口未连接</div>
+                    </div>
+
+                    <div class="serial-config">
+                        <div class="config-group">
+                            <label for="portSelect">选择串口</label>
+                            <select id="portSelect" disabled>
+                                <option value="">请先扫描串口</option>
+                            </select>
+                        </div>
+
+                        <div class="config-group">
+                            <label for="baudRate">波特率</label>
+                            <select id="baudRate">
+                                <option value="9600">9600</option>
+                                <option value="19200">19200</option>
+                                <option value="38400">38400</option>
+                                <option value="57600">57600</option>
+                                <option value="115200">115200</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="action-btn scan" id="scanBtn">扫描串口</button>
+                        <button class="action-btn connect" id="connectBtn" disabled>连接</button>
+                        <button class="action-btn disconnect" id="disconnectBtn" disabled>断开</button>
+                        <button class="action-btn clear" id="clearBtn">清空显示</button>
+                    </div>
+                </div>
+
+                <div class="program-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">📝 50步电压编程</div>
+                    </div>
+
+                    <div class="program-steps" id="programSteps">
+                        <!-- 动态生成50步 -->
+                    </div>
+
+                    <!-- 新增循环配置区域 -->
+                    <div class="cycle-config"
+                        style="margin: 15px 0; padding: 10px; background: #f5f5f5; border-radius: 8px; border: 1px solid #ddd;">
+                        <div class="panel-title" style="font-size: 14px; margin-bottom: 10px;">🔁 循环配置</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                            <div class="config-group">
+                                <label style="font-size: 12px; font-weight: 600;">起始步骤</label>
+                                <input type="number" id="cycleStartStep" min="1" max="50" value="1"
+                                    style="padding: 5px; border: 1px solid #ddd; border-radius: 4px; text-align: center; width: 100%;">
+                            </div>
+                            <div class="config-group">
+                                <label style="font-size: 12px; font-weight: 600;">结束步骤</label>
+                                <input type="number" id="cycleEndStep" min="1" max="50" value="5"
+                                    style="padding: 5px; border: 1px solid #ddd; border-radius: 4px; text-align: center; width: 100%;">
+                            </div>
+                            <div class="config-group">
+                                <label style="font-size: 12px; font-weight: 600;">循环次数</label>
+                                <input type="number" id="cycleCount" min="1" max="999" value="1"
+                                    style="padding: 5px; border: 1px solid #ddd; border-radius: 4px; text-align: center; width: 100%;">
+                                <label style="font-size: 10px; color: #999; margin-top: 2px;">0=无限循环</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="program-controls">
+                        <button class="program-btn btn-start" id="startProgramBtn" disabled>启动编程</button>
+                        <button class="program-btn btn-stop" id="stopProgramBtn" disabled>停止编程</button>
+                        <button class="program-btn btn-reset" id="resetProgramBtn">重置参数</button>
+                        <!-- 新增导入导出按钮 -->
+                        <button class="program-btn" style="background: #9b59b6; color: white;"
+                            id="exportConfigBtn">导出JSON</button>
+                        <button class="program-btn" style="background: #f39c12; color: white;"
+                            id="importConfigBtn">导入JSON</button>
+                        <input type="file" id="importFileInput" accept=".json" style="display: none;">
+                    </div>
+
+                    <div class="program-status" id="programStatus">状态：未运行</div>
+                </div>
+
+                <div class="specs-panel">
+                    <div class="specs-title">
+                        <span>📋 系统规格参数</span>
+                    </div>
+                    <div class="specs-grid">
+                        <div class="spec-item">
+                            <span class="spec-label">最大电压</span>
+                            <span class="spec-value">25.0 V</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">最大电流</span>
+                            <span class="spec-value">10.0 A</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">缓冲大小</span>
+                            <span class="spec-value">30 bytes</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">默认波特率</span>
+                            <span class="spec-value">9600</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="display-panel">
+                <div class="panel-header">
+                    <div class="panel-title">📊 串口通信监控 & 电压波形</div>
+                    <div id="bufferStatus">缓冲区: 0/30</div>
+                </div>
+
+                <div style="height: 200px; margin-bottom: 15px;">
+                    <canvas id="voltageWaveChart"></canvas>
+                </div>
+
+                <div class="display-area" id="displayArea">
+                    <div class="display-line info">可编程电源控制系统就绪</div>
+                    <div class="display-line info">支持命令: VSET1, ISET1, OUT1/OUT0, VSET1?, VOUT1?, IOUT1?</div>
+                    <div class="display-line info">最大电压: 25.0V | 最大电流: 10.0A</div>
+                </div>
+
+                <div class="display-controls">
+                    <label class="display-checkbox">
+                        <input type="checkbox" id="autoScroll" checked>
+                        <span>自动滚动</span>
+                    </label>
+                    <label class="display-checkbox">
+                        <input type="checkbox" id="showTimestamp" checked>
+                        <span>显示时间戳</span>
+                    </label>
+                    <label class="display-checkbox">
+                        <input type="checkbox" id="hexDisplay">
+                        <span>十六进制显示</span>
+                    </label>
+                    <label class="display-checkbox">
+                        <input type="checkbox" id="debugMode">
+                        <span>调试模式</span>
+                    </label>
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <div class="panel-title" style="margin-bottom: 8px; font-size: 16px;">🔧 手动命令发送</div>
+                    <div class="input-group">
+                        <input type="text" id="manualCommand" placeholder="输入自定义命令..." disabled
+                            oninput="this.value=this.value.replace(/[^0-9a-zA-Z?:]/g,'')">
+                        <button id="sendCommandBtn" disabled>发送命令</button>
+                    </div>
+                    <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                        <button class="cmd-btn" onclick="sendCommand('VSET1:')">VSET1:</button>
+                        <button class="cmd-btn" onclick="sendCommand('ISET1:')">ISET1:</button>
+                        <button class="cmd-btn" onclick="sendCommand('VSET1?')">VSET1?</button>
+                        <button class="cmd-btn" onclick="sendCommand('VOUT1?')">VOUT1?</button>
+                        <button class="cmd-btn" onclick="sendCommand('IOUT1?')">IOUT1?</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>🔌 可编程电源控制系统 v1.0 | 基于Web Serial API | 支持Chrome 89+ / Edge 89+</p>
+            <p>⚠️ 使用前请确保电源设备已正确连接并配置为正确的通信参数</p>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let port = null;
+        let reader = null;
+        let writer = null;
+        let isConnected = false;
+        let receiveBuffer = [];
+        const MAX_BUFFER_SIZE = 30;
+        let stopReading = false;
+        let programRunning = false;
+        let currentStep = 0;
+        let programTimer = null;
+        let programStepsData = [];
+        let lastExecutedStepNum = 0;
+        let voltageWaveChart = null;
+        let voltageData = [];
+        let timeData = []; // 新增：记录时间戳（秒）
+        let startTime = null; // 新增：记录波形起始时间
+        const MAX_DATA_POINTS = 50;
+        let lastVoltageChangeTime = null; // 新增：记录上一次电压变更的时间戳（毫秒）
+        let firstVoltageChangeTime = null; // 新增：第一次电压变更的基准时间（毫秒）
+        let programContext = { validSteps: [], validStepIndexes: [] };
+
+        let modeData = {
+            mode1: [],
+            mode2: [],
+            mode3: [],
+            mode4: [],
+            mode5: []
+        };
+        let currentActiveMode = 'mode1';
+
+        let currentCycle = 0; // 当前循环次数
+        let cycleStartStep = 1; // 循环起始步
+        let cycleEndStep = 5; // 循环结束步
+        let cycleTotal = 1; // 总循环次数（0=无限）
+
+        // 新增DOM元素变量（在原有DOM元素区末尾添加）
+        const saveModeBtn = document.getElementById('saveModeBtn') || { disabled: false, addEventListener: () => { } };
+        const loadModeBtn = document.getElementById('loadModeBtn') || { disabled: false, addEventListener: () => { } };
+        const exportModeBtn = document.getElementById('exportModeBtn') || { disabled: false, addEventListener: () => { } };
+        const importModeBtn = document.getElementById('importModeBtn') || { disabled: false, addEventListener: () => { } };
+        const importFileInput = document.getElementById('importFileInput') || { disabled: false, addEventListener: () => { } };
+        const modeSelect = document.getElementById('modeSelect') || { value: 'mode1', addEventListener: () => { } };
+
+        const cycleStartStepInput = document.getElementById('cycleStartStep') || { value: 1 };
+        const cycleEndStepInput = document.getElementById('cycleEndStep') || { value: 5 };
+        const cycleCountInput = document.getElementById('cycleCount') || { value: 1 };
+
+        // DOM元素
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const serialStatus = document.getElementById('serialStatus');
+        const bufferStatus = document.getElementById('bufferStatus');
+        const displayArea = document.getElementById('displayArea');
+        const voltageSlider = document.getElementById('voltageSlider');
+        const voltageInput = document.getElementById('voltageInput');
+        const voltageValue = document.getElementById('voltageValue');
+        const currentSlider = document.getElementById('currentSlider');
+        const currentInput = document.getElementById('currentInput');
+        const currentValue = document.getElementById('currentValue');
+        const setVoltageBtn = document.getElementById('setVoltageBtn');
+        const setCurrentBtn = document.getElementById('setCurrentBtn');
+        const outputOnBtn = document.getElementById('outputOnBtn');
+        const outputOffBtn = document.getElementById('outputOffBtn');
+        const queryVoltageBtn = document.getElementById('queryVoltageBtn');
+        const queryOutputVoltageBtn = document.getElementById('queryOutputVoltageBtn');
+        const queryCurrentBtn = document.getElementById('queryCurrentBtn');
+        const readAllBtn = document.getElementById('readAllBtn');
+        const manualCommand = document.getElementById('manualCommand');
+        const sendCommandBtn = document.getElementById('sendCommandBtn');
+        const portSelect = document.getElementById('portSelect');
+        const baudRate = document.getElementById('baudRate');
+        const scanBtn = document.getElementById('scanBtn');
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const autoScroll = document.getElementById('autoScroll');
+        const showTimestamp = document.getElementById('showTimestamp');
+        const hexDisplay = document.getElementById('hexDisplay');
+        const debugMode = document.getElementById('debugMode');
+        const programSteps = document.getElementById('programSteps');
+        const startProgramBtn = document.getElementById('startProgramBtn');
+        const stopProgramBtn = document.getElementById('stopProgramBtn');
+        const resetProgramBtn = document.getElementById('resetProgramBtn');
+        const programStatus = document.getElementById('programStatus');
+
+        // 初始化电压波形图表
+        function initVoltageWaveChart() {
+            const ctx = document.getElementById('voltageWaveChart');
+            if (!ctx) {
+                addDisplayLine('错误：波形图表容器未找到', 'error');
+                return;
+            }
+            const chartCtx = ctx.getContext('2d');
+
+            voltageWaveChart = new Chart(chartCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '输出电压 (V)',
+                        data: [],
+                        borderColor: '#2ecc71',
+                        backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.2,
+                        fill: true,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#2ecc71'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: { display: true, text: '累计时间 (秒)' }, // 横轴说明修改
+                            ticks: {
+                                maxTicksLimit: 10,
+                                autoSkip: true,
+                                callback: function (_, index) {
+                                    return voltageWaveChart.data.labels[index] || '';
+                                }
+                            },
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        },
+                        y: {
+                            title: { display: true, text: '电压 (V)' },
+                            min: 0,
+                            max: 25,
+                            ticks: { stepSize: 5 },
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        }
+                    },
+                    animation: { duration: 100 },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { font: { size: 12 } }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function (tooltipItems) {
+                                    return '间隔时间: ' + tooltipItems[0].label;
+                                },
+                                label: function (context) {
+                                    return '输出电压: ' + context.raw.toFixed(2) + 'V';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            // 初始化空数据（无时间/电压）
+            timeData = [];
+            voltageData = [];
+            voltageWaveChart.data.labels = [];
+            voltageWaveChart.data.datasets[0].data = [];
+            voltageWaveChart.update('none');
+        }
+
+        // 更新波形数据
+        function updateVoltageWave(voltage) {
+            if (!voltageWaveChart) return;
+
+            const currentTime = new Date().getTime(); // 当前时间（毫秒）
+            let totalSec = 0.0; // 与第一次操作的累计秒数
+
+            // 首次变更：记录基准时间，累计时间为0.0s
+            if (!firstVoltageChangeTime) {
+                firstVoltageChangeTime = currentTime;
+                totalSec = 0.0;
+            } else {
+                // 非首次：计算与第一次的累计时间（毫秒→秒，保留1位小数）
+                totalSec = ((currentTime - firstVoltageChangeTime) / 1000).toFixed(1);
+            }
+            const totalNum = parseFloat(totalSec);
+
+            // 数据超限则移除最早的点
+            if (voltageData.length >= MAX_DATA_POINTS) {
+                voltageData.shift();
+                timeData.shift();
+                voltageWaveChart.data.labels.shift();
+            }
+
+            // 追加新数据（显示「X.Xs」）
+            voltageData.push(voltage);
+            timeData.push(totalNum);
+            voltageWaveChart.data.labels.push(totalSec + 's');
+            voltageWaveChart.data.datasets[0].data = voltageData;
+
+            // 强制更新图表
+            voltageWaveChart.update('none');
+        }
+
+        // 更新连接状态
+        function updateConnectionStatus(connected) {
+            isConnected = connected;
+            statusDot.classList.toggle('status-connected', connected);
+            statusText.textContent = connected ? '已连接' : '断开连接';
+            serialStatus.textContent = connected ? '串口已连接' : '串口未连接';
+
+            const controls = [setVoltageBtn, setCurrentBtn, outputOnBtn, outputOffBtn,
+                queryVoltageBtn, queryOutputVoltageBtn, queryCurrentBtn,
+                readAllBtn, manualCommand, sendCommandBtn, startProgramBtn];
+
+            controls.forEach(control => {
+                if (control) control.disabled = !connected;
+            });
+
+            connectBtn.disabled = connected;
+            disconnectBtn.disabled = !connected;
+            portSelect.disabled = connected;
+            baudRate.disabled = connected;
+            scanBtn.disabled = connected;
+        }
+
+        // 添加显示行
+        function addDisplayLine(text, type = 'info') {
+            const line = document.createElement('div');
+            line.className = `display-line ${type}`;
+
+            if (showTimestamp.checked) {
+                const now = new Date();
+                const timestamp = now.toTimeString().split(' ')[0] + '.' +
+                    now.getMilliseconds().toString().padStart(3, '0');
+                const timestampSpan = document.createElement('span');
+                timestampSpan.className = 'timestamp';
+                timestampSpan.textContent = `[${timestamp}]`;
+                line.appendChild(timestampSpan);
+            }
+
+            const textSpan = document.createElement('span');
+            textSpan.textContent = text;
+            line.appendChild(textSpan);
+
+            displayArea.appendChild(line);
+
+            receiveBuffer.push(text);
+            if (receiveBuffer.length > MAX_BUFFER_SIZE) {
+                receiveBuffer.shift();
+                if (displayArea.children.length > 50) {
+                    displayArea.removeChild(displayArea.firstChild);
+                }
+            }
+
+            bufferStatus.textContent = `缓冲区: ${receiveBuffer.length}/${MAX_BUFFER_SIZE}`;
+
+            if (autoScroll.checked) {
+                displayArea.scrollTop = displayArea.scrollHeight;
+            }
+        }
+
+        // 检查浏览器支持
+        function checkWebSerialSupport() {
+            const isSupported = 'serial' in navigator;
+
+            if (!isSupported) {
+                addDisplayLine('错误：当前浏览器不支持 Web Serial API', 'error');
+                addDisplayLine('提示：请使用 Chrome 89+ 或 Edge 89+ 浏览器', 'info');
+
+                scanBtn.disabled = true;
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = true;
+
+                return false;
+            }
+
+            addDisplayLine('浏览器支持 Web Serial API', 'success');
+            return true;
+        }
+
+        // 扫描可用串口
+        async function scanSerialPorts() {
+            try {
+                addDisplayLine('正在扫描串口...', 'info');
+
+                const port = await navigator.serial.requestPort();
+                const ports = await navigator.serial.getPorts();
+
+                portSelect.innerHTML = '';
+
+                if (ports.length === 0) {
+                    portSelect.innerHTML = '<option value="">未找到可用串口</option>';
+                    addDisplayLine('未找到可用串口。请确保设备已连接。', 'info');
+                } else {
+                    ports.forEach((port, index) => {
+                        const option = document.createElement('option');
+                        option.value = index;
+                        const portInfo = port.getInfo();
+                        let portName = '串口 ' + (index + 1);
+                        if (portInfo.usbVendorId && portInfo.usbProductId) {
+                            portName += ' (USB设备)';
+                        }
+                        option.textContent = portName;
+                        portSelect.appendChild(option);
+                    });
+                    connectBtn.disabled = false;
+                    addDisplayLine('找到 ' + ports.length + ' 个可用串口', 'success');
+                }
+
+            } catch (error) {
+                if (error.name === 'NotFoundError') {
+                    addDisplayLine('已取消串口权限申请', 'info');
+                } else {
+                    addDisplayLine('扫描串口时出错: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // 连接到串口
+        async function connectToPort() {
+            try {
+                disconnectBtn.disabled = true;
+
+                if (port) {
+                    await disconnectPort();
+                }
+
+                const ports = await navigator.serial.getPorts();
+                const selectedIndex = parseInt(portSelect.value);
+
+                if (isNaN(selectedIndex) || selectedIndex >= ports.length) {
+                    addDisplayLine('请选择有效的串口', 'error');
+                    return;
+                }
+
+                port = ports[selectedIndex];
+
+                try {
+                    await port.open({
+                        baudRate: parseInt(baudRate.value),
+                        dataBits: 8,
+                        stopBits: 1,
+                        parity: 'none',
+                        flowControl: 'none'
+                    });
+                } catch (openError) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    await port.open({
+                        baudRate: parseInt(baudRate.value),
+                        dataBits: 8,
+                        stopBits: 1,
+                        parity: 'none',
+                        flowControl: 'none'
+                    });
+                }
+
+                updateConnectionStatus(true);
+                addDisplayLine('已连接到串口，波特率: ' + baudRate.value, 'success');
+                readFromPort();
+
+            } catch (error) {
+                addDisplayLine('连接失败: ' + error.message, 'error');
+
+                disconnectBtn.disabled = isConnected;
+                port = null;
+                updateConnectionStatus(false);
+            }
+        }
+
+        // 从串口读取数据
+        let dataBuffer = '';
+        async function readFromPort() {
+            stopReading = false;
+            try {
+                const decoder = new TextDecoder();
+
+                while (port && port.readable && !stopReading) {
+                    reader = port.readable.getReader();
+
+                    try {
+                        while (true) {
+                            if (stopReading) break;
+
+                            const readPromise = reader.read();
+                            const timeoutPromise = new Promise((_, reject) =>
+                                setTimeout(() => reject(new Error('读取超时')), 3000)
+                            );
+
+                            let result;
+                            try {
+                                result = await Promise.race([readPromise, timeoutPromise]);
+                            } catch (timeoutErr) {
+                                if (timeoutErr.message === '读取超时' && !stopReading) {
+                                    continue;
+                                } else {
+                                    break;
+                                }
+                            }
+
+                            const { value, done } = result;
+                            if (done || stopReading) break;
+
+                            const text = decoder.decode(value);
+                            dataBuffer += text;
+
+                            if (dataBuffer.includes('\n') || dataBuffer.includes('\r')) {
+                                const lines = dataBuffer.split(/[\n\r]+/);
+                                dataBuffer = lines.pop() || '';
+
+                                lines.forEach(line => {
+                                    if (line.trim()) {
+                                        let displayText;
+                                        if (hexDisplay.checked) {
+                                            displayText = Array.from(new TextEncoder().encode(line))
+                                                .map(b => b.toString(16).padStart(2, '0').toUpperCase())
+                                                .join(' ');
+                                        } else {
+                                            displayText = line;
+                                        }
+                                        addDisplayLine(displayText, 'incoming');
+                                        parsePowerResponse(displayText);
+                                    }
+                                });
+                            }
+                        }
+                    } catch (readError) {
+                        if (isConnected && !stopReading) {
+                            addDisplayLine('读取数据时出错: ' + readError.message, 'error');
+                        }
+                    } finally {
+                        if (reader) {
+                            try { reader.releaseLock(); } catch (e) { }
+                            reader = null;
+                        }
+                    }
+                }
+            } catch (error) {
+                if (isConnected && !stopReading) {
+                    addDisplayLine('读取循环错误: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // 解析电源响应数据
+        function parsePowerResponse(response) {
+            const cleanResponse = response.trim();
+
+            if (debugMode.checked) {
+                addDisplayLine('原始响应: "' + cleanResponse + '"', 'info');
+            }
+
+            // 增强电压解析：匹配VSET/VOUT/纯数字+V的场景
+            const voltageRegex = /(VSET1:|VOUT1:|)(\d+\.\d+)\s*V?/i;
+            const voltageMatch = cleanResponse.match(voltageRegex);
+            if (voltageMatch && voltageMatch[2]) {
+                const voltage = parseFloat(voltageMatch[2]);
+                if (!isNaN(voltage)) {
+                    addDisplayLine('检测到电压: ' + voltage.toFixed(2) + 'V', 'success');
+                    updateVoltageWave(voltage); // 触发波形更新
+                }
+            }
+
+            if (cleanResponse.includes('A') && !cleanResponse.includes('ISET')) {
+                const currentMatch = cleanResponse.match(/(\d+\.\d+)\s*A?/);
+                if (currentMatch) {
+                    const current = parseFloat(currentMatch[1]);
+                    if (!isNaN(current)) {
+                        addDisplayLine('检测到电流: ' + current.toFixed(2) + 'A', 'success');
+                    }
+                }
+            }
+        }
+
+        // 发送命令到串口
+        async function sendSerialCommand(command) {
+            if (!port || !isConnected) {
+                addDisplayLine('错误：串口未连接', 'error');
+                return false;
+            }
+
+            try {
+                if (!command.endsWith('\n')) {
+                    command += '\n';
+                }
+
+                addDisplayLine('发送: ' + command.trim(), 'outgoing');
+
+                const encoder = new TextEncoder();
+                const data = encoder.encode(command);
+
+                writer = port.writable.getWriter();
+                await writer.write(data);
+                writer.releaseLock();
+
+                return true;
+
+            } catch (error) {
+                addDisplayLine('发送失败: ' + error.message, 'error');
+                return false;
+            }
+        }
+
+        // 电源控制命令函数
+        function setVoltage(value) {
+            const formattedValue = parseFloat(value).toFixed(2);
+            if (formattedValue > 25.0) {
+                addDisplayLine('错误：电压不能超过25.0V（当前：' + formattedValue + 'V）', 'error');
+                return;
+            }
+
+            const command = 'VSET1:' + formattedValue;
+            if (sendSerialCommand(command)) {
+                voltageValue.textContent = formattedValue + 'V';
+                addDisplayLine('设置电压: ' + formattedValue + 'V', 'success');
+                // 新增：强制更新波形（关键！确保设置电压后波形有反应）
+                updateVoltageWave(parseFloat(formattedValue));
+            }
+        }
+
+        function setCurrent(value) {
+            const formattedValue = parseFloat(value).toFixed(2);
+            if (formattedValue > 10.0) {
+                addDisplayLine('错误：电流不能超过10.0A（当前：' + formattedValue + 'A）', 'error');
+                return;
+            }
+
+            const command = 'ISET1:' + formattedValue;
+            if (sendSerialCommand(command)) {
+                currentValue.textContent = formattedValue + 'A';
+                addDisplayLine('设置电流: ' + formattedValue + 'A', 'success');
+            }
+        }
+
+        function outputOn() {
+            if (sendSerialCommand('OUT1')) {
+                addDisplayLine('输出开启', 'success');
+            }
+        }
+
+        function outputOff() {
+            if (sendSerialCommand('OUT0')) {
+                addDisplayLine('输出关闭', 'success');
+            }
+        }
+
+        function queryVoltage() {
+            if (sendSerialCommand('VSET1?')) {
+                addDisplayLine('查询电压设定值...', 'info');
+            }
+        }
+
+        function queryOutputVoltage() {
+            if (sendSerialCommand('VOUT1?')) {
+                addDisplayLine('查询实际电压值...', 'info');
+            }
+        }
+
+        function queryCurrent() {
+            if (sendSerialCommand('IOUT1?')) {
+                addDisplayLine('查询实际电流值...', 'info');
+            }
+        }
+
+        function readAllParameters() {
+            addDisplayLine('开始读取所有参数...', 'info');
+            queryVoltage();
+            setTimeout(queryOutputVoltage, 300);
+            setTimeout(queryCurrent, 600);
+        }
+
+        // 断开串口连接
+        async function disconnectPort() {
+            try {
+                stopReading = true;
+
+                if (programRunning) {
+                    stopProgram();
+                }
+
+                if (reader) {
+                    try {
+                        await Promise.race([
+                            reader.cancel(),
+                            new Promise(resolve => setTimeout(resolve, 1000))
+                        ]);
+                    } catch (e) { }
+                    reader = null;
+                }
+
+                if (writer) {
+                    try {
+                        await Promise.race([
+                            writer.close(),
+                            new Promise(resolve => setTimeout(resolve, 500))
+                        ]);
+                    } catch (e) { }
+                    writer = null;
+                }
+
+                if (port) {
+                    try {
+                        if (port.readable || port.writable) {
+                            await port.close();
+                        }
+                    } catch (e) {
+                        addDisplayLine('关闭端口时的次要错误: ' + e.message, 'info');
+                    }
+                    port = null;
+                }
+
+                updateConnectionStatus(false);
+                addDisplayLine('已完全断开串口连接', 'success');
+
+            } catch (error) {
+                addDisplayLine('断开连接时出错: ' + error.message, 'error');
+                port = null;
+                reader = null;
+                writer = null;
+                stopReading = true;
+                updateConnectionStatus(false);
+            }
+        }
+
+        // 清空数据展示区域
+        function clearDisplay() {
+            displayArea.innerHTML = '';
+            receiveBuffer = [];
+            bufferStatus.textContent = '缓冲区: 0/30';
+            addDisplayLine('显示区域已清空', 'info');
+        }
+
+        // 手动发送命令
+        function sendCommand(cmd) {
+            if (isConnected) {
+                manualCommand.value = cmd;
+                sendSerialCommand(cmd);
+                manualCommand.value = '';
+            } else {
+                addDisplayLine('请先连接串口', 'error');
+            }
+        }
+
+        // 初始化50步电压编程面板（虚拟滚动优化）
+        // 初始化50步电压编程面板（兼容模式导入的参数传入）
+        function initProgramSteps(initData = null) {
+            programSteps.innerHTML = '';
+            programStepsData = [];
+
+            // 优先使用传入的初始化数据（后续导入JSON用），无则初始化空数据
+            const initSteps = initData || Array(50).fill({ voltage: null, time: null, isEdited: false });
+
+            for (let i = 0; i < 50; i++) {
+                const stepData = initSteps[i] || { voltage: null, time: null, isEdited: false };
+                const stepItem = document.createElement('div');
+                stepItem.className = 'step-item';
+                stepItem.innerHTML = `
+            <div class="step-num">${i + 1}</div>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <input type="number" class="step-voltage" min="0" max="25" step="0.01" 
+                       value="${stepData.voltage !== null ? stepData.voltage.toFixed(2) : ''}" 
+                       placeholder="未设置">
+                <span style="font-size: 12px;">(V)</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <input type="number" class="step-time" min="0.1" max="300" step="0.1" 
+                       value="${stepData.time !== null ? stepData.time.toFixed(1) : ''}" 
+                       placeholder="未设置">
+                <span style="font-size: 12px;">(s)</span>
+            </div>
+        `;
+                programSteps.appendChild(stepItem);
+
+                // 初始化数据
+                programStepsData.push({
+                    voltage: stepData.voltage,
+                    time: stepData.time,
+                    isEdited: stepData.isEdited
+                });
+
+                // 绑定输入事件（仅当输入值时才标记为已编辑）
+                const voltageInput = stepItem.querySelector('.step-voltage');
+                const timeInput = stepItem.querySelector('.step-time');
+
+                voltageInput.addEventListener('change', function () {
+                    let value = parseFloat(this.value);
+                    // 空值则重置为null
+                    if (isNaN(value)) {
+                        this.value = '';
+                        programStepsData[i].voltage = null;
+                        programStepsData[i].isEdited = false;
+                    } else {
+                        value = Math.max(0, Math.min(25, value)).toFixed(2);
+                        this.value = value;
+                        programStepsData[i].voltage = parseFloat(value);
+                        programStepsData[i].isEdited = true;
+                    }
+                });
+
+                timeInput.addEventListener('change', function () {
+                    let value = parseFloat(this.value);
+                    // 空值则重置为null
+                    if (isNaN(value)) {
+                        this.value = '';
+                        programStepsData[i].time = null;
+                        programStepsData[i].isEdited = false;
+                    } else {
+                        value = Math.max(0.1, Math.min(300, value)).toFixed(1);
+                        this.value = value;
+                        programStepsData[i].time = parseFloat(value);
+                        programStepsData[i].isEdited = true;
+                    }
+                });
+            }
+        }
+
+        // 启动电压编程
+        // 启动电压编程（新增循环逻辑）
+        function startProgram() {
+            if (programRunning) return;
+
+            // 获取循环配置
+            cycleStartStep = parseInt(cycleStartStepInput.value) || 1;
+            cycleEndStep = parseInt(cycleEndStepInput.value) || 5;
+            cycleTotal = parseInt(cycleCountInput.value) || 1;
+
+            // 验证循环配置
+            if (cycleStartStep < 1 || cycleStartStep > 50) {
+                addDisplayLine('错误：起始步骤必须在1-50之间', 'error');
+                return;
+            }
+            if (cycleEndStep < 1 || cycleEndStep > 50) {
+                addDisplayLine('错误：结束步骤必须在1-50之间', 'error');
+                return;
+            }
+            if (cycleStartStep > cycleEndStep) {
+                addDisplayLine('错误：起始步骤不能大于结束步骤', 'error');
+                return;
+            }
+
+            lastExecutedStepNum = 0;
+            currentCycle = 0; // 重置当前循环次数
+
+            // 筛选循环范围内的有效步骤
+            const validSteps = [];
+            const validStepIndexes = [];
+            for (let i = cycleStartStep - 1; i <= cycleEndStep - 1; i++) {
+                const step = programStepsData[i];
+                if (step && step.voltage !== null && step.time !== null) {
+                    validSteps.push({
+                        voltage: step.voltage,
+                        time: step.time
+                    });
+                    validStepIndexes.push(i + 1);
+                }
+            }
+
+            if (validSteps.length === 0) {
+                addDisplayLine(`错误：${cycleStartStep}-${cycleEndStep}步内无有效配置`, 'error');
+                return;
+            }
+
+            programRunning = true;
+            currentStep = 0;
+            programContext = {
+                validSteps: validSteps,
+                validStepIndexes: validStepIndexes,
+                cycleStart: cycleStartStep,
+                cycleEnd: cycleEndStep
+            };
+
+            startProgramBtn.disabled = true;
+            stopProgramBtn.disabled = false;
+            programStatus.textContent = `状态：运行中（循环${currentCycle + 1}/${cycleTotal || '无限'} | 步骤范围${cycleStartStep}-${cycleEndStep}）`;
+            addDisplayLine(`启动电压编程 | 循环次数：${cycleTotal || '无限'} | 步骤范围：${cycleStartStep}-${cycleEndStep} | 有效步骤数：${validSteps.length}`, 'success');
+
+            // 执行第一步
+            executeStepWithCycle(currentStep);
+        }
+
+        // 执行单步电压设置
+        // 执行单步+循环逻辑
+        function executeStepWithCycle(stepIndex) {
+            const { validSteps, validStepIndexes } = programContext;
+            if (!programRunning) return;
+
+            // 单轮步骤执行完毕
+            if (stepIndex >= validSteps.length) {
+                currentCycle++;
+                // 判断是否继续循环
+                if (cycleTotal === 0 || currentCycle < cycleTotal) {
+                    // 继续下一轮循环
+                    programStatus.textContent = `状态：运行中（循环${currentCycle + 1}/${cycleTotal || '无限'} | 步骤范围${cycleStartStep}-${cycleEndStep}）`;
+                    addDisplayLine(`完成第${currentCycle}轮循环，开始第${currentCycle + 1}轮`, 'info');
+                    currentStep = 0; // 重置步骤索引
+                    executeStepWithCycle(currentStep);
+                } else {
+                    // 循环结束
+                    stopProgram();
+                    addDisplayLine(`所有循环执行完成（共${currentCycle}轮）`, 'success');
+                    programStatus.textContent = `状态：已完成（共${currentCycle}轮循环）`;
+                }
+                return;
+            }
+
+            const step = validSteps[stepIndex];
+            const originalStepNum = validStepIndexes[stepIndex];
+            lastExecutedStepNum = originalStepNum;
+
+            addDisplayLine(`[循环${currentCycle + 1}/${cycleTotal || '无限'}] 执行第${originalStepNum}步：电压=${step.voltage.toFixed(2)}V，保持${step.time}秒`, 'info');
+            setVoltage(step.voltage);
+
+            programTimer = setTimeout(() => {
+                currentStep++;
+                programStatus.textContent = `状态：运行中（循环${currentCycle + 1}/${cycleTotal || '无限'} | 当前第${originalStepNum}步）`;
+                executeStepWithCycle(currentStep);
+            }, step.time * 1000);
+        }
+
+        // 停止编程
+        function stopProgram() {
+            if (!programRunning) return;
+
+            programRunning = false;
+            clearTimeout(programTimer);
+            startProgramBtn.disabled = false;
+            stopProgramBtn.disabled = true;
+
+            const stopStep = lastExecutedStepNum || 0;
+            programStatus.textContent = `状态：已停止（循环${currentCycle}/${cycleTotal || '无限'} | 停止于第${stopStep}步）`;
+            addDisplayLine(`电压编程已停止（已执行${currentCycle}轮循环 | 停止于第${stopStep}步）`, 'info');
+        }
+
+        // 重置编程参数
+        function resetProgram() {
+            if (programRunning) {
+                stopProgram();
+            }
+            initProgramSteps();
+            // 重置循环配置输入框
+            cycleStartStepInput.value = 1;
+            cycleEndStepInput.value = 5;
+            cycleCountInput.value = 1;
+            // 重置循环变量
+            cycleStartStep = 1;
+            cycleEndStep = 5;
+            cycleTotal = 1;
+            currentCycle = 0;
+
+            programStatus.textContent = '状态：未运行';
+            addDisplayLine('电压编程参数及循环配置已重置', 'info');
+        }
+
+        // 导出当前50步配置为JSON模板（新增）
+        // 导出当前50步配置+循环配置为JSON模板
+        function exportProgramConfig() {
+            const exportData = {
+                mode: "自定义模式",
+                createTime: new Date().toLocaleString(),
+                cycleConfig: { // 新增循环配置
+                    startStep: parseInt(cycleStartStepInput.value) || 1,
+                    endStep: parseInt(cycleEndStepInput.value) || 5,
+                    cycleCount: parseInt(cycleCountInput.value) || 1
+                },
+                steps: JSON.parse(JSON.stringify(programStepsData))
+            };
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `电源编程配置_${new Date().getTime()}.json`;
+            document.body.appendChild(a);
+            a.click();
+
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+
+            addDisplayLine('已导出当前配置（含循环参数）为JSON模板文件', 'success');
+        }
+
+        // 导入JSON模板文件（含循环配置）
+        function importProgramConfig(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (programRunning) {
+                addDisplayLine('请先停止正在运行的编程再导入配置', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const importData = JSON.parse(e.target.result);
+                    if (!importData.steps || !Array.isArray(importData.steps) || importData.steps.length !== 50) {
+                        throw new Error('JSON模板格式错误：必须包含50步配置');
+                    }
+
+                    // 验证并格式化步骤数据
+                    const validSteps = importData.steps.map(step => ({
+                        voltage: step.voltage !== null ? Math.max(0, Math.min(25, step.voltage)) : null,
+                        time: step.time !== null ? Math.max(0.1, Math.min(300, step.time)) : null,
+                        isEdited: step.isEdited || false
+                    }));
+
+                    // 加载步骤配置
+                    initProgramSteps(validSteps);
+
+                    // 加载循环配置（如果有）
+                    if (importData.cycleConfig) {
+                        cycleStartStepInput.value = importData.cycleConfig.startStep || 1;
+                        cycleEndStepInput.value = importData.cycleConfig.endStep || 5;
+                        cycleCountInput.value = importData.cycleConfig.cycleCount || 1;
+                        addDisplayLine('已导入循环配置：起始步=' + (importData.cycleConfig.startStep || 1) +
+                            '，结束步=' + (importData.cycleConfig.endStep || 5) +
+                            '，循环次数=' + (importData.cycleConfig.cycleCount || 1), 'info');
+                    }
+
+                    addDisplayLine('成功导入JSON模板配置（含步骤+循环参数）', 'success');
+                } catch (error) {
+                    addDisplayLine('导入失败：' + error.message, 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // 初始化事件监听器
+        function initEventListeners() {
+            voltageSlider.addEventListener('input', function () {
+                const value = parseFloat(this.value).toFixed(2);
+                voltageInput.value = value;
+                voltageValue.textContent = value + 'V';
+            });
+
+            voltageInput.addEventListener('change', function () {
+                let value = parseFloat(this.value);
+                if (isNaN(value)) value = 0;
+                if (value > 25) value = 25;
+                if (value < 0) value = 0;
+
+                const formattedValue = value.toFixed(2);
+                this.value = formattedValue;
+                voltageSlider.value = formattedValue;
+                voltageValue.textContent = formattedValue + 'V';
+            });
+
+            setVoltageBtn.addEventListener('click', function () {
+                setVoltage(voltageInput.value);
+            });
+
+            currentSlider.addEventListener('input', function () {
+                const value = parseFloat(this.value).toFixed(2);
+                currentInput.value = value;
+                currentValue.textContent = value + 'A';
+            });
+
+            currentInput.addEventListener('change', function () {
+                let value = parseFloat(this.value);
+                if (isNaN(value)) value = 0;
+                if (value > 10) value = 10;
+                if (value < 0) value = 0;
+
+                const formattedValue = value.toFixed(2);
+                this.value = formattedValue;
+                currentSlider.value = formattedValue;
+                currentValue.textContent = formattedValue + 'A';
+            });
+
+            setCurrentBtn.addEventListener('click', function () {
+                setCurrent(currentInput.value);
+            });
+
+            outputOnBtn.addEventListener('click', outputOn);
+            outputOffBtn.addEventListener('click', outputOff);
+            queryVoltageBtn.addEventListener('click', queryVoltage);
+            queryOutputVoltageBtn.addEventListener('click', queryOutputVoltage);
+            queryCurrentBtn.addEventListener('click', queryCurrent);
+            readAllBtn.addEventListener('click', readAllParameters);
+
+            scanBtn.addEventListener('click', scanSerialPorts);
+            connectBtn.addEventListener('click', connectToPort);
+            disconnectBtn.addEventListener('click', disconnectPort);
+            clearBtn.addEventListener('click', clearDisplay);
+
+            manualCommand.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter' && manualCommand.value.trim()) {
+                    sendSerialCommand(manualCommand.value);
+                    manualCommand.value = '';
+                }
+            });
+
+            sendCommandBtn.addEventListener('click', function () {
+                if (manualCommand.value.trim()) {
+                    sendSerialCommand(manualCommand.value);
+                    manualCommand.value = '';
+                }
+            });
+
+            window.sendCommand = sendCommand;
+
+            startProgramBtn.addEventListener('click', startProgram);
+            stopProgramBtn.addEventListener('click', stopProgram);
+            resetProgramBtn.addEventListener('click', resetProgram);
+            // 绑定导入导出事件（新增）
+            const exportConfigBtn = document.getElementById('exportConfigBtn');
+            const importConfigBtn = document.getElementById('importConfigBtn');
+            const importFileInput = document.getElementById('importFileInput');
+
+            exportConfigBtn.addEventListener('click', exportProgramConfig);
+            importConfigBtn.addEventListener('click', () => importFileInput.click());
+            importFileInput.addEventListener('change', importProgramConfig);
+        }
+
+        // 初始化应用
+        function initApp() {
+            firstVoltageChangeTime = null; // 首次打开页面，无基准时间
+            timeData = [];
+            voltageData = [];
+
+            addDisplayLine('电源控制系统初始化...', 'info');
+
+
+            if (checkWebSerialSupport()) {
+                addDisplayLine('初始化完成', 'success');
+                addDisplayLine('点击"扫描串口"按钮开始使用', 'info');
+
+                initEventListeners();
+                baudRate.value = '9600';
+
+                setTimeout(() => {
+                    initProgramSteps();
+                }, 500);
+                startTime = null;
+
+                if (window.chartLoaded) {
+                    initVoltageWaveChart();
+                } else {
+                    const checkChart = setInterval(() => {
+                        if (window.chartLoaded) {
+                            initVoltageWaveChart();
+                            clearInterval(checkChart);
+                        }
+                    }, 100);
+                }
+
+            } else {
+                addDisplayLine('替代方案：', 'info');
+                addDisplayLine('1. 使用 Chrome 89+ 或 Edge 89+ 浏览器', 'info');
+                addDisplayLine('2. 通过HTTPS或localhost访问此页面', 'info');
+                addDisplayLine('3. 检查浏览器控制台是否有更多错误信息', 'info');
+            }
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', initApp);
+
+        // 页面卸载前断开连接
+        window.addEventListener('beforeunload', function () {
+            if (isConnected && port) {
+                disconnectPort();
+            }
+        });
+    </script>
+</body>
+
+</html>
